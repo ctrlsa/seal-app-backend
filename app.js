@@ -4,9 +4,11 @@ import autoLoad from "@fastify/autoload";
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard } from "grammy";
 
 import { config } from "./config.js";
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +33,7 @@ app.register(fastifyStatic, {
 });
 
 // Receive webhook updates on path https://example.com/<BOT-TOKEN>
-//app.post(config.WEBHOOK_PATH + config.BOT_TOKEN, webhookCallback(bot, "fastify", { secretToken: config.SECRET_TOKEN }));
+//app.post("/" + config.BOT_TOKEN, webhookCallback(bot, "fastify", { secretToken: config.SECRET_TOKEN }));
 
 // delay is the number of milliseconds for the graceful close to finish
 const closeListeners = closeWithGrace(
@@ -51,25 +53,22 @@ app.addHook("onClose", async (instance, done) => {
 });
 
 bot.command("start", async (ctx) => {
-  const URL = config.WEBHOOK_URL;
+  const keyboard = new InlineKeyboard();
 
-  const keyboard = {
-    reply_markup: {
-      inline_keyboard: [[{ text: "Open Seal App", web_app: { URL } }]]
-    }
-  };
-  await ctx.reply("Press button bellow to open the App", keyboard);
+  keyboard.webApp("Open Seal App", config.WEBAPP_URL);
+
+  await ctx.reply("Press button bellow to open the App", { reply_markup: keyboard });
 });
 
 const startServer = async () => {
   try {
-    await app.listen({ port: config.WEBAPP_PORT, host: config.WEBAPP_HOST }, async (error) => {
-      await bot.init();
+    await app.listen({ port: config.APP_PORT, host: config.APP_HOST }, async (error) => {
+      await bot.start();
       console.log("Bot started");
       //await bot.api.setWebhook(config.WEBHOOK_URL + config.BOT_TOKEN, { secret_token: config.SECRET_TOKEN });
     });
 
-    console.log("Server listening on " + config.WEBAPP_PORT);
+    console.log("Server listening on " + config.APP_PORT);
   } catch (err) {
     console.error(err);
     process.exit(1);
